@@ -8,6 +8,7 @@ import { getFiles } from "@/lib/supabase/files";
 import { getMessages } from "@/lib/supabase/messages";
 import { getAccessibleProjects } from "@/lib/supabase/projects";
 import { getCurrentUserProfile } from "@/lib/supabase/auth";
+import DashboardGreeting from "@/components/dashboard/DashboardGreeting";
 
 export default async function Dashboard() {
   const [projects, userProfile] = await Promise.all([
@@ -22,20 +23,12 @@ export default async function Dashboard() {
     )
     .slice(0, 3);
   const currentHour = new Date().getHours();
-
-  const greeting =
+  const initialPeriod =
     currentHour < 12
-      ? "Good morning"
+      ? "morning"
       : currentHour < 18
-        ? "Good afternoon"
-        : "Good evening";
-
-  const greetingMessage =
-    currentHour < 12
-      ? "Ready to make progress today?"
-      : currentHour < 18
-        ? "Here's what needs your attention."
-        : "Here's a quick look at your day's progress.";
+        ? "afternoon"
+        : "evening";
   const projectIds = projects.map((project) => project.id);
   const [tasks, reviews, messages, files] = await Promise.all([
     getTasks(projectIds),
@@ -241,17 +234,12 @@ export default async function Dashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-        {greeting} 👋
-      </h1>
+      <DashboardGreeting initialPeriod={initialPeriod} />
       {userProfile && (
         <p className="mt-1 text-sm text-gray-500">
           Welcome back, {userProfile.full_name}
         </p>
       )}
-      <p className="mt-2 text-sm leading-6 text-gray-500">
-        {greetingMessage}
-      </p>
       {userProfile && (
         <span className="mt-2 inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium capitalize text-gray-600">
           {userProfile.role}
