@@ -53,7 +53,7 @@ export default async function Sidebar() {
       : freelancerNavigation;
 
   return (
-    <aside className="shrink-0 border-b border-border bg-surface px-4 py-3 sm:px-6 lg:min-h-screen lg:w-64 lg:border-b-0 lg:border-r lg:p-6">
+    <aside className="shrink-0 border-b border-border bg-surface px-4 py-3 sm:px-6 lg:h-full lg:w-64 lg:border-b-0 lg:border-r lg:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:block">
         <Link
           href="/dashboard"
