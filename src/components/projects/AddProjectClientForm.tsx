@@ -42,6 +42,7 @@ export default function AddProjectClientForm({
           body: JSON.stringify({
             project_id: projectId,
             user_id: selectedClient.id,
+            client_name: selectedClient.full_name,
             role: "client",
           }),
         }

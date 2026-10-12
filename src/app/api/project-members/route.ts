@@ -139,7 +139,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { project_id, user_id, role } = body as Record<
+  const { project_id, user_id, client_name, role } = body as Record<
     string,
     unknown
   >;
@@ -149,12 +149,14 @@ export async function POST(request: Request) {
     !project_id.trim() ||
     typeof user_id !== "string" ||
     !user_id.trim() ||
+    typeof client_name !== "string" ||
+    !client_name.trim() ||
     typeof role !== "string"
   ) {
     return NextResponse.json(
       {
         error:
-          "Project ID, user ID, and role are required",
+          "Project ID, user ID, client name, and role are required",
       },
       { status: 400 }
     );
@@ -190,16 +192,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: clientProfile, error: clientProfileError } =
-    await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", user_id.trim())
-      .eq("role", "client")
-      .maybeSingle();
+  const { data: clientProfiles, error: clientProfilesError } =
+    await supabase.rpc("search_client_profiles", {
+      search_term: client_name.trim(),
+    });
 
-  if (clientProfileError) {
-    console.error("Error verifying client profile:", clientProfileError);
+  if (clientProfilesError) {
+    console.error("Error verifying client profile:", clientProfilesError);
 
     return NextResponse.json(
       { error: "Unable to verify selected client." },
@@ -207,7 +206,22 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!clientProfile) {
+  const clientProfileExists =
+    Array.isArray(clientProfiles) &&
+    clientProfiles.some((client: unknown) => {
+      if (typeof client !== "object" || client === null) {
+        return false;
+      }
+
+      return (
+        "id" in client &&
+        client.id === user_id.trim() &&
+        "role" in client &&
+        client.role === "client"
+      );
+    });
+
+  if (!clientProfileExists) {
     return NextResponse.json(
       { error: "Selected user is not a client." },
       { status: 400 }
