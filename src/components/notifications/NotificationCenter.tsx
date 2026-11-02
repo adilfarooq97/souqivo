@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Bell, Check, Loader2 } from "lucide-react";
 import type { Notification } from "@/lib/supabase/notifications";
 import Alert from "@/components/ui/Alert";
 
@@ -34,55 +35,31 @@ function getNotificationHref(notification: Notification): string {
   }
 }
 
-function formatNotificationTime(
-  createdAt: string
-) {
+function formatNotificationTime(createdAt: string) {
   const createdTime = new Date(createdAt).getTime();
   const now = Date.now();
-  const difference = Math.max(
-    0,
-    now - createdTime
-  );
+  const difference = Math.max(0, now - createdTime);
 
-  const minutes = Math.floor(
-    difference / (1000 * 60)
-  );
+  const minutes = Math.floor(difference / (1000 * 60));
 
-  if (minutes < 1) {
-    return "Just now";
-  }
-
-  if (minutes < 60) {
-    return `${minutes}m ago`;
-  }
-
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
-
-  if (hours < 24) {
-    return `${hours}h ago`;
-  }
-
+  if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
-
-  if (days === 1) {
-    return "Yesterday";
-  }
-
-  if (days < 7) {
-    return `${days}d ago`;
-  }
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days}d ago`;
 
   return new Date(createdAt).toLocaleDateString();
 }
 
 export default function NotificationCenter() {
-  const [notifications, setNotifications] = useState<
-    Notification[]
-  >([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [actionError, setActionError] = useState("");
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -111,6 +88,25 @@ export default function NotificationCenter() {
     };
   }, []);
 
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        panelRef.current &&
+        !panelRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
   const retryLoadingNotifications = () => {
     setIsLoading(true);
     setLoadError("");
@@ -133,18 +129,13 @@ export default function NotificationCenter() {
     (notification) => !notification.is_read
   ).length;
 
-  const markAsRead = async (
-    notificationId: string
-  ) => {
+  const markAsRead = async (notificationId: string) => {
     setActionError("");
 
     try {
-      const response = await fetch(
-        `/api/notifications/${notificationId}`,
-        {
-          method: "PATCH",
-        }
-      );
+      const response = await fetch(`/api/notifications/${notificationId}`, {
+        method: "PATCH",
+      });
 
       if (!response.ok) {
         setActionError("Unable to update notification. Please try again.");
@@ -159,10 +150,7 @@ export default function NotificationCenter() {
         )
       );
     } catch (error) {
-      console.error(
-        "Error marking notification as read:",
-        error
-      );
+      console.error("Error marking notification as read:", error);
       setActionError("Unable to update notification. Please try again.");
     }
   };
@@ -172,9 +160,7 @@ export default function NotificationCenter() {
       (notification) => !notification.is_read
     );
 
-    if (unreadNotifications.length === 0) {
-      return;
-    }
+    if (unreadNotifications.length === 0) return;
 
     setActionError("");
 
@@ -206,31 +192,27 @@ export default function NotificationCenter() {
         );
       }
     } catch (error) {
-      console.error(
-        "Error marking all notifications as read:",
-        error
-      );
+      console.error("Error marking all notifications as read:", error);
       setActionError("Unable to update notifications. Please try again.");
     }
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={panelRef}>
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        aria-label={`Notifications${unreadCount > 0
-          ? `, ${unreadCount} unread`
-          : ""
-          }`}
+        aria-label={`Notifications${
+          unreadCount > 0 ? `, ${unreadCount} unread` : ""
+        }`}
         aria-expanded={isOpen}
         aria-controls="notification-panel"
-        className="relative rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-muted-foreground shadow-2xs transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
-        <span aria-hidden="true">🔔</span>
+        <Bell className="h-4 w-4" aria-hidden="true" />
 
         {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-900 px-1 text-[10px] font-bold text-white">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-white shadow-xs">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -239,25 +221,33 @@ export default function NotificationCenter() {
       {isOpen && (
         <div
           id="notification-panel"
-          className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg"
+          className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-border bg-surface shadow-lg animate-in fade-in zoom-in-95 duration-150"
         >
-          <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-            <h2 className="text-sm font-semibold text-gray-900">
-              Notifications
-            </h2>
+          <div className="flex items-center justify-between border-b border-border-muted px-4 py-3 bg-surface-muted/30">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Notifications
+              </h2>
+              {unreadCount > 0 && (
+                <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
+                  {unreadCount} new
+                </span>
+              )}
+            </div>
 
             {unreadCount > 0 && (
               <button
                 type="button"
                 onClick={markAllAsRead}
-                className="text-xs font-medium text-gray-600 transition hover:text-gray-900"
+                className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
-                Mark all as read
+                <Check className="h-3 w-3" aria-hidden="true" />
+                <span>Mark all read</span>
               </button>
             )}
           </div>
 
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-96 overflow-y-auto divide-y divide-border-muted">
             {actionError && (
               <Alert tone="danger" className="m-3">
                 {actionError}
@@ -265,83 +255,89 @@ export default function NotificationCenter() {
             )}
 
             {isLoading ? (
-              <p className="p-4 text-sm text-gray-500">
-                Loading notifications...
-              </p>
+              <div className="flex items-center justify-center gap-2 p-6 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Loading updates...</span>
+              </div>
             ) : loadError ? (
-              <div className="p-4">
-                <p className="text-sm text-danger" role="alert">
+              <div className="p-4 text-center">
+                <p className="text-xs text-danger" role="alert">
                   {loadError}
                 </p>
                 <button
                   type="button"
                   onClick={retryLoadingNotifications}
-                  className="mt-2 text-sm font-medium text-foreground underline underline-offset-4"
+                  className="mt-2 text-xs font-medium text-foreground underline underline-offset-4"
                 >
                   Try again
                 </button>
               </div>
             ) : notifications.length === 0 ? (
-              <p className="p-4 text-sm text-gray-500">
-                You have no notifications.
-              </p>
+              <div className="p-8 text-center">
+                <Bell className="mx-auto h-6 w-6 text-subtle-foreground" aria-hidden="true" />
+                <p className="mt-2 text-xs font-medium text-foreground">
+                  No notifications
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Updates on projects, reviews, and tasks will appear here.
+                </p>
+              </div>
             ) : (
-              notifications.slice(0, 10).map(
-                (notification) => (
+              notifications.slice(0, 10).map((notification) => {
+                const isUnread = !notification.is_read;
+
+                const inner = (
                   <div
-                    key={notification.id}
-                    className={`border-b border-gray-100 px-4 py-3 last:border-b-0 ${notification.is_read
-                      ? "bg-white"
-                      : "bg-gray-50"
-                      }`}
+                    className={`flex items-start gap-3 p-3.5 transition-colors hover:bg-surface-muted ${
+                      isUnread ? "bg-accent-muted/40" : "bg-surface"
+                    }`}
                   >
-                    {notification.project_id ? (
-                      <Link
-                        href={getNotificationHref(notification)}
-                        onClick={() =>
-                          markAsRead(notification.id)
-                        }
-                        className="block"
-                      >
-                        <p className="text-sm font-medium text-gray-900">
-                          {notification.title}
+                    <span
+                      className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${
+                        isUnread ? "bg-accent" : "bg-transparent"
+                      }`}
+                      aria-hidden="true"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-foreground leading-snug">
+                        {notification.title}
+                      </p>
+                      {notification.message && (
+                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                          {notification.message}
                         </p>
-
-                        {notification.message && (
-                          <p className="mt-1 text-xs leading-5 text-gray-500">
-                            {notification.message}
-                          </p>
-                        )}
-
-                        <p className="mt-1 text-[11px] text-gray-400">
-                          {formatNotificationTime(notification.created_at)}
-                        </p>
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          markAsRead(notification.id)
-                        }
-                        className="block w-full text-left"
-                      >
-                        <p className="text-sm font-medium text-gray-900">
-                          {notification.title}
-                        </p>
-
-                        {notification.message && (
-                          <p className="mt-1 text-xs leading-5 text-gray-500">
-                            {notification.message}
-                          </p>
-                        )}
-                        <p className="mt-1 text-[11px] text-gray-400">
-                          {formatNotificationTime(notification.created_at)}
-                        </p>
-                      </button>
-                    )}
+                      )}
+                      <p className="mt-1.5 text-[10px] font-medium text-subtle-foreground">
+                        {formatNotificationTime(notification.created_at)}
+                      </p>
+                    </div>
                   </div>
-                )
-              )
+                );
+
+                if (notification.project_id) {
+                  return (
+                    <Link
+                      key={notification.id}
+                      href={getNotificationHref(notification)}
+                      onClick={() => markAsRead(notification.id)}
+                      className="block focus-visible:outline-none focus-visible:bg-surface-muted"
+                    >
+                      {inner}
+                    </Link>
+                  );
+                }
+
+                return (
+                  <button
+                    key={notification.id}
+                    type="button"
+                    onClick={() => markAsRead(notification.id)}
+                    className="block w-full text-left focus-visible:outline-none focus-visible:bg-surface-muted"
+                  >
+                    {inner}
+                  </button>
+                );
+              })
             )}
           </div>
         </div>

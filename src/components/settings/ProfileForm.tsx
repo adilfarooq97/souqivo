@@ -2,29 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Mail, Shield } from "lucide-react";
 import type { ProfileSettings } from "@/lib/supabase/settings";
 import Button from "@/components/ui/Button";
 import FormField from "@/components/ui/FormField";
+import Alert from "@/components/ui/Alert";
+import Avatar from "@/components/ui/Avatar";
+import Badge from "@/components/ui/Badge";
 
 type ProfileFormProps = {
   profile: ProfileSettings;
 };
 
-export default function ProfileForm({
-  profile,
-}: ProfileFormProps) {
+export default function ProfileForm({ profile }: ProfileFormProps) {
   const router = useRouter();
 
-  const [fullName, setFullName] = useState(
-    profile.full_name
-  );
+  const [fullName, setFullName] = useState(profile.full_name);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (
-    event: React.FormEvent<HTMLFormElement>
-  ) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     setError("");
@@ -38,44 +36,35 @@ export default function ProfileForm({
     }
 
     if (trimmedName.length > 100) {
-      setError(
-        "Full name must be 100 characters or less."
-      );
+      setError("Full name must be 100 characters or less.");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        "/api/settings/profile",
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            full_name: trimmedName,
-          }),
-        }
-      );
+      const response = await fetch("/api/settings/profile", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          full_name: trimmedName,
+        }),
+      });
 
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(
-          data?.error || "Unable to update profile."
-        );
+        throw new Error(data?.error || "Unable to update profile.");
       }
 
       setFullName(data.full_name);
       setSuccess("Profile updated successfully.");
       router.refresh();
-    } catch (error) {
+    } catch (err) {
       setError(
-        error instanceof Error
-          ? error.message
-          : "Unable to update profile."
+        err instanceof Error ? err.message : "Unable to update profile."
       );
     } finally {
       setIsLoading(false);
@@ -83,53 +72,65 @@ export default function ProfileForm({
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mt-6 space-y-5"
-    >
+    <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+      {/* Avatar Header Preview */}
+      <div className="flex items-center gap-4 rounded-xl border border-border bg-surface-muted/30 p-4">
+        <Avatar name={fullName || "User"} size="lg" role={profile.role} />
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">
+            {fullName || "Your Name"}
+          </h3>
+          <div className="mt-1 flex items-center gap-2">
+            <Badge variant={profile.role === "freelancer" ? "neutral" : "success"} size="sm">
+              {profile.role === "freelancer" ? "Freelancer" : "Client"}
+            </Badge>
+            <span className="text-xs text-muted-foreground">{profile.email}</span>
+          </div>
+        </div>
+      </div>
+
       <FormField
         id="fullName"
         label="Full name"
         value={fullName}
         onChange={(event) => setFullName(event.target.value)}
         disabled={isLoading}
+        placeholder="Your full name"
       />
 
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-          Email
-        </p>
+      {/* Readonly Account Details */}
+      <div className="grid gap-4 sm:grid-cols-2 pt-2">
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+            <Mail className="h-3.5 w-3.5" />
+            <span>Email Address</span>
+          </div>
+          <p className="text-sm font-medium text-foreground truncate">
+            {profile.email}
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-1">Managed via authentication provider.</p>
+        </div>
 
-        <p className="mt-1 text-sm font-medium text-gray-900">
-          {profile.email}
-        </p>
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+            <Shield className="h-3.5 w-3.5" />
+            <span>Account Role</span>
+          </div>
+          <p className="text-sm font-medium capitalize text-foreground">
+            {profile.role}
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-1">Defines workspace access permissions.</p>
+        </div>
       </div>
 
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-          Role
-        </p>
+      {error && <Alert tone="danger">{error}</Alert>}
+      {success && <Alert tone="success">{success}</Alert>}
 
-        <p className="mt-1 text-sm font-medium capitalize text-gray-900">
-          {profile.role}
-        </p>
+      <div className="pt-2">
+        <Button type="submit" disabled={isLoading} isLoading={isLoading}>
+          {isLoading ? "Saving changes..." : "Save Changes"}
+        </Button>
       </div>
-
-      {error && (
-        <p className="text-sm text-danger" role="alert">
-          {error}
-        </p>
-      )}
-
-      {success && (
-        <p className="text-sm text-success" role="status">
-          {success}
-        </p>
-      )}
-
-      <Button type="submit" disabled={isLoading}>
-        {isLoading ? "Saving..." : "Save Changes"}
-      </Button>
     </form>
   );
 }

@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import AuthCard from "@/components/auth/AuthCard";
 import CreateTaskForm from "@/components/tasks/CreateTaskForm";
 import { getProjects } from "@/lib/supabase/projects";
+import PageHeader from "@/components/ui/PageHeader";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 
 export default async function NewTaskPage({
   params,
@@ -19,27 +19,25 @@ export default async function NewTaskPage({
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <div className="mb-6">
-        <Link
-          href={`/projects/${project.id}/tasks`}
-          className="text-sm text-gray-500 hover:text-gray-900"
-        >
-          ← Back to tasks
-        </Link>
+    <div className="mx-auto max-w-2xl space-y-6 animate-in fade-in duration-200">
+      <PageHeader
+        title="Create a new task"
+        description={`Add a trackable task to ${project.name}.`}
+        breadcrumbs={
+          <Breadcrumbs
+            items={[
+              { label: "Projects", href: "/projects" },
+              { label: project.name, href: `/projects/${project.id}` },
+              { label: "Tasks", href: `/projects/${project.id}/tasks` },
+              { label: "New Task" },
+            ]}
+          />
+        }
+      />
 
-        <h1 className="mt-4 text-2xl font-bold text-gray-900">
-          Create a new task
-        </h1>
-
-        <p className="mt-2 text-sm text-gray-500">
-          Add a task to {project.name}.
-        </p>
-      </div>
-
-      <AuthCard>
+      <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 shadow-xs">
         <CreateTaskForm projectId={project.id} />
-      </AuthCard>
+      </div>
     </div>
   );
 }

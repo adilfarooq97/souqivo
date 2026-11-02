@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Plus, Sparkles } from "lucide-react";
 import { getAccessibleProjects } from "@/lib/supabase/projects";
 import { getReviews } from "@/lib/supabase/reviews";
 import ReviewCard from "@/components/reviews/ReviewCard";
@@ -9,7 +10,7 @@ import ProjectNavigation from "@/components/projects/ProjectNavigation";
 import EmptyState from "@/components/ui/EmptyState";
 import PageHeader from "@/components/ui/PageHeader";
 import Alert from "@/components/ui/Alert";
-
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 
 export default async function ReviewsPage({
   params,
@@ -31,41 +32,44 @@ export default async function ReviewsPage({
     (review) => review.status === "Pending"
   );
 
+  const isFreelancer = profile?.role === "freelancer";
+
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        <Link
-          href={`/projects/${project.id}`}
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          ← Back to project
-        </Link>
+    <div className="space-y-6 animate-in fade-in duration-200">
+      <Breadcrumbs
+        items={[
+          { label: "Projects", href: "/projects" },
+          { label: project.name, href: `/projects/${project.id}` },
+          { label: "Reviews" },
+        ]}
+      />
 
-        <ProjectNavigation projectId={project.id} />
+      <ProjectNavigation projectId={project.id} active="reviews" />
 
-        <PageHeader
-          title="Design reviews"
-          description={project.name}
-          action={
-            profile?.role === "freelancer" ? (
-              <Link href={`/projects/${project.id}/reviews/new`}>
-                <Button>New Review</Button>
-              </Link>
-            ) : undefined
-          }
-        />
-      </div>
-      {profile?.role === "client" && pendingReviews.length > 0 && (
-        <Alert tone="warning">
-          <p className="text-sm font-semibold text-warning">
-            {pendingReviews.length === 1
-              ? "1 review is waiting for your approval."
-              : `${pendingReviews.length} reviews are waiting for your approval.`}
-          </p>
+      <PageHeader
+        title={`${project.name} Reviews`}
+        description={
+          isFreelancer
+            ? "Submit deliverables for review, collect feedback, and track approvals."
+            : "Review submitted project deliverables and provide your approval or requested changes."
+        }
+        action={
+          isFreelancer ? (
+            <Link href={`/projects/${project.id}/reviews/new`}>
+              <Button variant="primary" leftIcon={<Plus className="h-4 w-4" />}>
+                New Review
+              </Button>
+            </Link>
+          ) : undefined
+        }
+      />
 
-          <p className="mt-1 text-sm text-warning">
-            Review the submitted work and approve it or request changes.
-          </p>
+      {!isFreelancer && pendingReviews.length > 0 && (
+        <Alert tone="warning" title="Action required on deliverables">
+          {pendingReviews.length === 1
+            ? "1 deliverable is awaiting your approval."
+            : `${pendingReviews.length} deliverables are awaiting your approval.`}{" "}
+          Please review the submitted work below and approve it or request changes.
         </Alert>
       )}
 
@@ -73,26 +77,29 @@ export default async function ReviewsPage({
         <EmptyState
           title="No reviews yet"
           description={
-            profile?.role === "freelancer"
-              ? "Create your first review submission for this project."
-              : "No review submissions have been added to this project yet."
+            isFreelancer
+              ? "Create your first deliverable review submission to request feedback from your client."
+              : "No deliverable reviews have been submitted for this project yet."
           }
+          icon={<Sparkles className="h-6 w-6 text-subtle-foreground" />}
           action={
-            profile?.role === "freelancer" ? (
+            isFreelancer ? (
               <Link href={`/projects/${project.id}/reviews/new`}>
-                <Button>New Review</Button>
+                <Button variant="primary" leftIcon={<Plus className="h-4 w-4" />}>
+                  Create First Review
+                </Button>
               </Link>
             ) : undefined
           }
         />
       ) : (
-        <div className="grid gap-4">
+        <div className="space-y-4">
           {reviews.map((review) => (
             <ReviewCard
               key={review.id}
               review={review}
               projectId={project.id}
-              canManage={profile?.role === "freelancer"}
+              canManage={isFreelancer}
             />
           ))}
         </div>

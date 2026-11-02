@@ -12,37 +12,37 @@ export default function MessageBubble({
   isOwn,
   onDelete,
 }: MessageBubbleProps) {
+  const formattedTime = new Date(message.created_at).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
   return (
-    <div
-      className={`flex ${isOwn ? "justify-end" : "justify-start"
-        }`}
-    >
+    <div className={`flex w-full ${isOwn ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[75%] rounded-2xl px-4 py-3 ${isOwn
-          ? "bg-gray-900 text-white"
-          : "bg-gray-100 text-gray-900"
-          }`}
+        className={`group relative max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 shadow-2xs ${
+          isOwn
+            ? "bg-slate-900 text-white rounded-br-xs"
+            : "bg-surface border border-border text-foreground rounded-bl-xs"
+        }`}
       >
-        <p className="text-sm leading-6">
+        <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words">
           {message.content}
         </p>
 
-        <p
-          className={`mt-1 text-xs ${isOwn ? "text-gray-300" : "text-gray-500"
-            }`}
+        <div
+          className={`mt-1.5 flex items-center justify-between gap-2 text-[10px] ${
+            isOwn ? "text-slate-400" : "text-subtle-foreground"
+          }`}
         >
-          {new Intl.DateTimeFormat("en-US", {
-            dateStyle: "medium",
-            timeStyle: "short",
-            timeZone: "UTC",
-          }).format(new Date(message.created_at))}
-        </p>
-        {isOwn && (
-          <DeleteMessageButton
-            messageId={message.id}
-            onDeleted={onDelete}
-          />
-        )}
+          <span>{formattedTime}</span>
+
+          {isOwn && (
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+              <DeleteMessageButton messageId={message.id} onDeleted={onDelete} />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

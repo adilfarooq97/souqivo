@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Check, Edit3, ExternalLink, MessageSquare, RotateCcw } from "lucide-react";
 import type { Review } from "@/types";
 import ReviewBadge from "@/components/reviews/ReviewBadge";
+import Button from "@/components/ui/Button";
+import Alert from "@/components/ui/Alert";
 
 type ReviewCardProps = {
   review: Review;
@@ -20,22 +23,15 @@ export default function ReviewCard({
   const [clientComment, setClientComment] = useState(
     review.client_comment ?? ""
   );
-  const [comment, setComment] = useState(
-    review.client_comment ?? ""
-  );
+  const [comment, setComment] = useState(review.client_comment ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const respondToReview = async (
     nextStatus: "Approved" | "Changes Requested"
   ) => {
-    if (
-      nextStatus === "Changes Requested" &&
-      !comment.trim()
-    ) {
-      setError(
-        "Please add a comment before requesting changes."
-      );
+    if (nextStatus === "Changes Requested" && !comment.trim()) {
+      setError("Please add a note explaining what changes are needed.");
       return;
     }
 
@@ -43,36 +39,29 @@ export default function ReviewCard({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(
-        `/api/reviews/${review.id}/respond`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status: nextStatus,
-            client_comment: comment.trim(),
-          }),
-        }
-      );
+      const response = await fetch(`/api/reviews/${review.id}/respond`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: nextStatus,
+          client_comment: comment.trim(),
+        }),
+      });
 
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(
-          data?.error || "Unable to respond to review."
-        );
+        throw new Error(data?.error || "Unable to respond to review.");
       }
 
       setStatus(nextStatus);
       setClientComment(comment.trim());
       setComment("");
-    } catch (error) {
+    } catch (err) {
       setError(
-        error instanceof Error
-          ? error.message
-          : "Unable to respond to review."
+        err instanceof Error ? err.message : "Unable to respond to review."
       );
     } finally {
       setIsSubmitting(false);
@@ -80,111 +69,125 @@ export default function ReviewCard({
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h3 className="font-semibold text-gray-900">
-            {review.title}
-          </h3>
+    <div className="rounded-2xl border border-border bg-surface p-6 shadow-2xs space-y-4">
+      {/* Top Header: Title & Status */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h3 className="text-base font-semibold tracking-tight text-foreground">
+              {review.title}
+            </h3>
+            <ReviewBadge status={status} />
+          </div>
 
           {review.description && (
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="text-xs leading-relaxed text-muted-foreground max-w-2xl">
               {review.description}
             </p>
           )}
         </div>
 
-        <ReviewBadge status={status} />
+        {canManage && (
+          <Link href={`/projects/${projectId}/reviews/${review.id}/edit`}>
+            <Button
+              variant="outline"
+              size="xs"
+              leftIcon={<Edit3 className="h-3 w-3" />}
+            >
+              Edit
+            </Button>
+          </Link>
+        )}
       </div>
 
-      {clientComment && (
-        <div className="mt-4 rounded-lg bg-gray-50 p-3">
-          <p className="text-xs font-medium text-gray-500">
-            Client comment
-          </p>
+      {/* Deliverable File / Asset Link */}
+      {review.file_url && (
+        <div className="pt-1">
+          <a
+            href={review.file_url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface-muted/50 px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-surface-muted hover:border-border-strong transition-all"
+          >
+            <ExternalLink className="h-3.5 w-3.5 text-accent" />
+            <span>Open Deliverable Asset</span>
+          </a>
+        </div>
+      )}
 
-          <p className="mt-1 text-sm text-gray-700">
+      {/* Existing Client Comment Thread */}
+      {clientComment && (
+        <div className="rounded-xl border border-border-muted bg-surface-muted/30 p-4 space-y-1.5">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <MessageSquare className="h-3.5 w-3.5" />
+            <span>Client Feedback Note</span>
+          </div>
+          <p className="text-xs leading-relaxed text-foreground">
             {clientComment}
           </p>
         </div>
       )}
 
+      {/* Decision Summary for Client */}
       {!canManage && status !== "Pending" && (
-        <div className="mt-4 rounded-lg bg-gray-50 p-3">
-          <p className="text-sm font-medium text-gray-700">
-            {status === "Approved"
-              ? "You approved this review."
-              : "You requested changes to this review."}
-          </p>
+        <div
+          className={`rounded-xl border p-3.5 text-xs font-medium ${
+            status === "Approved"
+              ? "border-success-border bg-success-muted text-success"
+              : "border-danger-border bg-danger-muted text-danger"
+          }`}
+        >
+          {status === "Approved"
+            ? "✓ You have approved this deliverable."
+            : "⚠ You requested changes on this deliverable."}
         </div>
       )}
 
-      {review.file_url && (
-        <div className="mt-4">
-          <a
-            href={review.file_url}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sm font-medium text-gray-900 underline"
-          >
-            View file
-          </a>
-        </div>
-      )}
-
-      {canManage && (
-        <div className="mt-4">
-          <Link
-            href={`/projects/${projectId}/reviews/${review.id}/edit`}
-            className="text-sm font-medium text-gray-700 hover:text-gray-900"
-          >
-            Edit review →
-          </Link>
-        </div>
-      )}
-
+      {/* Client Feedback & Decision Form (when Pending) */}
       {!canManage && status === "Pending" && (
-        <div className="mt-5 border-t border-gray-200 pt-5">
-          <label className="block text-sm font-medium text-gray-700">
-            Feedback
-          </label>
+        <div className="border-t border-border-muted pt-5 space-y-3">
+          <div>
+            <label className="block text-xs font-semibold text-foreground tracking-tight">
+              Feedback &amp; Revision Notes
+            </label>
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={3}
+              placeholder="Add feedback for the freelancer (required when requesting revisions)..."
+              className="mt-1.5 w-full rounded-xl border border-border bg-surface p-3 text-xs leading-relaxed text-foreground outline-none transition placeholder:text-subtle-foreground hover:border-border-strong focus:border-accent focus:ring-2 focus:ring-accent/20"
+              maxLength={1000}
+              disabled={isSubmitting}
+            />
+          </div>
 
-          <textarea
-            value={comment}
-            onChange={(event) => setComment(event.target.value)}
-            rows={4}
-            placeholder="Add feedback for the freelancer..."
-            className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
-            maxLength={1000}
-            disabled={isSubmitting}
-          />
+          {error && <Alert tone="danger">{error}</Alert>}
 
-          {error && (
-            <p className="mt-2 text-sm text-danger" role="alert">
-              {error}
-            </p>
-          )}
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
+          <div className="flex flex-wrap items-center gap-2.5 pt-1">
+            <Button
               type="button"
+              variant="primary"
+              size="sm"
               onClick={() => respondToReview("Approved")}
               disabled={isSubmitting}
-              className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              isLoading={isSubmitting}
+              leftIcon={<Check className="h-4 w-4" />}
+              className="bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-700 shadow-xs"
             >
-              {isSubmitting ? "Saving..." : "Approve"}
-            </button>
+              Approve Deliverable
+            </Button>
 
-            <button
+            <Button
               type="button"
-              onClick={() =>
-                respondToReview("Changes Requested")
-              }
+              variant="outline"
+              size="sm"
+              onClick={() => respondToReview("Changes Requested")}
               disabled={isSubmitting}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-50"
+              leftIcon={<RotateCcw className="h-4 w-4" />}
+              className="border-danger-border text-danger hover:bg-danger-muted hover:border-danger hover:text-danger"
             >
               Request Changes
-            </button>
+            </Button>
           </div>
         </div>
       )}

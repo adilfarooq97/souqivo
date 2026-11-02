@@ -1,4 +1,5 @@
 import type { SelectHTMLAttributes, ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 
 type SelectFieldProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "id"> & {
   id: string;
@@ -25,26 +26,32 @@ export default function SelectField({
     .join(" ") || undefined;
 
   return (
-    <div className="space-y-2">
-      <label htmlFor={id} className="block text-sm font-medium text-foreground">
+    <div className="space-y-1.5 w-full">
+      <label htmlFor={id} className="block text-xs font-semibold text-foreground tracking-tight">
         {label}
       </label>
-      <select
-        {...selectProps}
-        id={id}
-        aria-invalid={Boolean(error)}
-        aria-describedby={describedBy}
-        className={`min-h-10 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm leading-6 text-foreground outline-none transition hover:border-slate-300 focus-visible:border-info focus-visible:ring-2 focus-visible:ring-info/20 aria-invalid:border-danger aria-invalid:focus-visible:ring-danger/20 disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-muted-foreground disabled:opacity-70 ${className}`}
-      >
-        {children}
-      </select>
-      {helperText && (
+      <div className="relative flex items-center">
+        <select
+          {...selectProps}
+          id={id}
+          aria-invalid={Boolean(error)}
+          aria-describedby={describedBy}
+          className={`min-h-10 w-full appearance-none rounded-lg border border-border bg-surface px-3 py-2 pr-9 text-sm leading-6 text-foreground shadow-2xs outline-none transition hover:border-border-strong focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/20 aria-invalid:border-danger aria-invalid:focus-visible:ring-danger/20 disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-muted-foreground disabled:opacity-70 ${className}`}
+        >
+          {children}
+        </select>
+        <ChevronDown
+          className="pointer-events-none absolute right-3 h-4 w-4 text-muted-foreground"
+          aria-hidden="true"
+        />
+      </div>
+      {helperText && !error && (
         <p id={`${id}-help`} className="text-xs leading-5 text-muted-foreground">
           {helperText}
         </p>
       )}
       {error && (
-        <p id={`${id}-error`} className="text-sm text-danger" role="alert">
+        <p id={`${id}-error`} className="text-xs font-medium text-danger" role="alert">
           {error}
         </p>
       )}

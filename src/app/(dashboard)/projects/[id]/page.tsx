@@ -1,5 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  Calendar,
+  CheckSquare,
+  ChevronRight,
+  Clock,
+  Edit3,
+  FileText,
+  MessageSquare,
+  Sparkles,
+} from "lucide-react";
 import { getAccessibleProjects } from "@/lib/supabase/projects";
 import DeleteProjectButton from "@/components/projects/DeleteProjectButton";
 import { getTasks } from "@/lib/supabase/tasks";
@@ -14,6 +24,9 @@ import { getCurrentUserProfile } from "@/lib/supabase/auth";
 import ProjectNavigation from "@/components/projects/ProjectNavigation";
 import ActivityItem from "@/components/dashboard/ActivityItem";
 import StatusBadge from "@/components/ui/StatusBadge";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import Progress from "@/components/ui/Progress";
+import Button from "@/components/ui/Button";
 
 export default async function ProjectPage({
   params,
@@ -27,63 +40,41 @@ export default async function ProjectPage({
     getCurrentUserProfile(),
   ]);
 
-
-  const project = projects.find(
-    (item) => item.id === id
-  );
+  const project = projects.find((item) => item.id === id);
 
   if (!project) {
     notFound();
   }
 
-  const [tasks, reviews, files, messages, members] =
-    await Promise.all([
-      getTasks(project.id),
-      getReviews(project.id),
-      getFiles(project.id),
-      getMessages(project.id),
-      getProjectMembers(project.id),
-    ]);
+  const [tasks, reviews, files, messages, members] = await Promise.all([
+    getTasks(project.id),
+    getReviews(project.id),
+    getFiles(project.id),
+    getMessages(project.id),
+    getProjectMembers(project.id),
+  ]);
 
   const memberProfiles =
     members.length > 0
-      ? await getMemberProfiles(
-        members.map((member) => member.user_id)
-      )
+      ? await getMemberProfiles(members.map((member) => member.user_id))
       : [];
 
   let imageFiles = 0;
   let documentFiles = 0;
 
   for (const file of files) {
-    if (file.file_type === "image") {
-      imageFiles += 1;
-    }
-
-    if (file.file_type === "document") {
-      documentFiles += 1;
-    }
+    if (file.file_type === "image") imageFiles += 1;
+    if (file.file_type === "document") documentFiles += 1;
   }
 
-  const pendingReviews = reviews.filter(
-    (review) => review.status === "Pending"
-  );
-  const completedTasks = tasks.filter(
-    (task) => task.status === "Done"
-  ).length;
-  const remainingTasks = tasks.length - completedTasks;
-  const inProgressTasks = tasks.filter(
-    (task) => task.status === "In Progress",
-  ).length;
-
-  const reviewTasks = tasks.filter(
-    (task) => task.status === "Review",
-  ).length;
+  const pendingReviews = reviews.filter((review) => review.status === "Pending");
+  const completedTasks = tasks.filter((task) => task.status === "Done").length;
+  const inProgressTasks = tasks.filter((task) => task.status === "In Progress").length;
+  const reviewTasks = tasks.filter((task) => task.status === "Review").length;
 
   const taskProgress =
-    tasks.length > 0
-      ? Math.round((completedTasks / tasks.length) * 100)
-      : 0;
+    tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : project.progress;
+
   const deadlineDate = project.deadline
     ? new Date(`${project.deadline}T00:00:00`)
     : null;
@@ -93,9 +84,8 @@ export default async function ProjectPage({
 
   const daysUntilDeadline = deadlineDate
     ? Math.round(
-      (deadlineDate.getTime() - today.getTime()) /
-      (1000 * 60 * 60 * 24)
-    )
+        (deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      )
     : null;
 
   const recentActivity = [
@@ -107,8 +97,8 @@ export default async function ProjectPage({
         review.status === "Approved"
           ? "Review approved"
           : review.status === "Changes Requested"
-            ? "Changes requested"
-            : "Review submitted",
+          ? "Changes requested"
+          : "Review submitted",
       timestamp: review.updated_at,
       href: `/projects/${project.id}/reviews`,
     })),
@@ -139,19 +129,23 @@ export default async function ProjectPage({
   ]
     .sort(
       (a, b) =>
-        new Date(b.timestamp).getTime() -
-        new Date(a.timestamp).getTime(),
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     )
     .slice(0, 5);
-  return (
-    <div className="space-y-8">
-      <Link
-        href="/dashboard"
-        className="text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
-      >
-        ← Back to dashboard
-      </Link>
 
+  const isFreelancer = userProfile?.role === "freelancer";
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-200">
+      {/* Top Breadcrumb */}
+      <Breadcrumbs
+        items={[
+          { label: "Projects", href: "/projects" },
+          { label: project.name },
+        ]}
+      />
+
+      {/* Project Navigation Bar */}
       <ProjectNavigation
         projectId={project.id}
         active="overview"
@@ -163,322 +157,260 @@ export default async function ProjectPage({
         }}
       />
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
+      {/* Project Banner Header */}
+      <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 shadow-2xs">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                 {project.name}
               </h1>
-
               <StatusBadge status={project.status} />
             </div>
 
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600">
+            <p className="mt-2.5 max-w-3xl text-sm leading-relaxed text-muted-foreground">
               {project.description || "No project description has been added yet."}
             </p>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-gray-500">Deadline:</span>
-
-              {deadlineDate ? (
-                <>
-                  <span className="font-medium text-gray-900">
+            {/* Meta Row: Deadline & Status */}
+            <div className="mt-4 flex flex-wrap items-center gap-4 text-xs">
+              <div className="flex items-center gap-1.5 text-muted-foreground font-medium">
+                <Calendar className="h-4 w-4 text-subtle-foreground" aria-hidden="true" />
+                <span>Deadline:</span>
+                {deadlineDate ? (
+                  <span className="font-semibold text-foreground">
                     {deadlineDate.toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
                     })}
                   </span>
+                ) : (
+                  <span className="text-subtle-foreground">No deadline set</span>
+                )}
+              </div>
 
-                  {daysUntilDeadline !== null && (
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${daysUntilDeadline < 0
-                        ? "bg-danger-muted text-danger"
-                        : daysUntilDeadline <= 3
-                          ? "bg-warning-muted text-warning"
-                          : "bg-success-muted text-success"
-                        }`}
-                    >
-                      {daysUntilDeadline < 0
-                        ? "Overdue"
-                        : daysUntilDeadline === 0
-                          ? "Due today"
-                          : daysUntilDeadline === 1
-                            ? "Due tomorrow"
-                            : `${daysUntilDeadline} days left`}
-                    </span>
-                  )}
-                </>
-              ) : (
-                <span className="text-gray-400">No deadline set</span>
+              {daysUntilDeadline !== null && (
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold border ${
+                    daysUntilDeadline < 0
+                      ? "bg-danger-muted text-danger border-danger-border"
+                      : daysUntilDeadline <= 3
+                      ? "bg-warning-muted text-warning border-warning-border"
+                      : "bg-success-muted text-success border-success-border"
+                  }`}
+                >
+                  {daysUntilDeadline < 0
+                    ? `Overdue by ${Math.abs(daysUntilDeadline)} days`
+                    : daysUntilDeadline === 0
+                    ? "Due today"
+                    : daysUntilDeadline === 1
+                    ? "Due tomorrow"
+                    : `${daysUntilDeadline} days left`}
+                </span>
               )}
             </div>
           </div>
 
-          {userProfile?.role === "freelancer" && (
-            <div className="flex shrink-0 gap-2">
-              <Link
-                href={`/projects/${project.id}/edit`}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-              >
-                Edit Project
+          {/* Action Buttons for Freelancer */}
+          {isFreelancer && (
+            <div className="flex shrink-0 flex-wrap items-center gap-2.5">
+              <Link href={`/projects/${project.id}/edit`}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<Edit3 className="h-4 w-4" />}
+                >
+                  Edit Project
+                </Button>
               </Link>
-
               <DeleteProjectButton projectId={project.id} />
             </div>
           )}
         </div>
       </div>
-      <div className="grid gap-6 lg:grid-cols-2 mt-8">
-        <ProjectMembers members={members} profiles={memberProfiles} canManage={userProfile?.role === "freelancer"} />
 
-        {userProfile?.role === "freelancer" && (
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="mb-5">
-              <h2 className="font-semibold text-gray-900">
-                Add Client
-              </h2>
-
-              <p className="mt-1 text-sm text-gray-500">
-                Give an existing client access to this project.
-              </p>
-            </div>
-
-            <AddProjectClientForm
-              projectId={project.id}
-            />
-          </div>
-        )}
-      </div>
-      <div className="mt-8">
-        <div className="mb-4 flex items-center justify-between">
+      {/* Progress & Quick Stats Card */}
+      <div className="rounded-2xl border border-border bg-surface p-6 shadow-2xs space-y-5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">
-              Tasks
-            </h2>
-
-            <p className="text-sm text-gray-500">
-              Track the work for this project.
-            </p>
-          </div>
-
-          <Link
-            href={`/projects/${project.id}/tasks`}
-            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-          >
-            {userProfile?.role === "freelancer"
-              ? "Manage Tasks"
-              : "View Tasks"}
-          </Link>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <p className="text-sm font-medium text-gray-500">
-              Total Tasks
-            </p>
-
-            <p className="mt-2 text-3xl font-bold text-gray-900">
-              {tasks.length}
-            </p>
-
-            <p className="mt-1 text-xs text-gray-500">
-              Tasks across this project
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <p className="text-sm font-medium text-gray-500">
-              Completed Tasks
-            </p>
-
-            <p className="mt-2 text-3xl font-bold text-gray-900">
-              {completedTasks}
-            </p>
-
-            <p className="mt-1 text-xs text-gray-500">
-              {taskProgress}% of all tasks
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <p className="text-sm font-medium text-gray-500">
-              Remaining Tasks
-            </p>
-
-            <p className="mt-2 text-3xl font-bold text-gray-900">
-              {remainingTasks}
-            </p>
-
-            <p className="mt-1 text-xs text-gray-500">
-              Tasks still in progress
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <p className="text-sm font-medium text-gray-500">
-              Project Reviews
-            </p>
-
-            <p className="mt-2 text-3xl font-bold text-gray-900">
-              {reviews.length}
-            </p>
-
-            <p className="mt-1 text-xs text-gray-500">
-              {pendingReviews.length} pending review
-              {pendingReviews.length === 1 ? "" : "s"}
-            </p>
-          </div>
-        </div>
-      </div>
-      <div className="mt-4 rounded-xl border border-gray-200 bg-white p-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold tracking-tight text-gray-900">
+            <h2 className="text-base font-semibold tracking-tight text-foreground">
               Project Progress
             </h2>
-
-            <p className="mt-1 text-sm leading-6 text-gray-500">
-              Progress based on completed tasks.
-            </p>
-
-            <p className="mt-1 text-sm text-gray-500">
-              {completedTasks} of {tasks.length} tasks completed
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {completedTasks} of {tasks.length} tasks completed ({taskProgress}%)
             </p>
           </div>
-
-          <span className="text-xl font-bold tracking-tight text-gray-900">
+          <span className="text-2xl font-bold tracking-tight text-foreground">
             {taskProgress}%
           </span>
         </div>
 
-        <div className="mt-5 h-3 overflow-hidden rounded-full bg-gray-100">
-          <div
-            className="h-full rounded-full bg-gray-900 transition-all"
-            style={{ width: `${taskProgress}%` }}
-          />
-        </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-lg bg-gray-50 px-4 py-3">
-            <p className="text-xs font-medium text-gray-500">In Progress</p>
-            <p className="mt-1 text-lg font-semibold text-gray-900">
-              {inProgressTasks}
-            </p>
-          </div>
+        <Progress value={taskProgress} size="md" variant={taskProgress === 100 ? "success" : "primary"} />
 
-          <div className="rounded-lg bg-gray-50 px-4 py-3">
-            <p className="text-xs font-medium text-gray-500">In Review</p>
-            <p className="mt-1 text-lg font-semibold text-gray-900">
-              {reviewTasks}
-            </p>
+        <div className="grid gap-3 sm:grid-cols-3 pt-2">
+          <div className="rounded-xl border border-border-muted bg-surface-muted/40 px-4 py-3">
+            <p className="text-xs font-medium text-muted-foreground">In Progress</p>
+            <p className="mt-1 text-lg font-bold text-foreground">{inProgressTasks}</p>
           </div>
-
-          <div className="rounded-lg bg-gray-50 px-4 py-3">
-            <p className="text-xs font-medium text-gray-500">Completed</p>
-            <p className="mt-1 text-lg font-semibold text-gray-900">
-              {completedTasks}
-            </p>
+          <div className="rounded-xl border border-border-muted bg-surface-muted/40 px-4 py-3">
+            <p className="text-xs font-medium text-muted-foreground">In Review</p>
+            <p className="mt-1 text-lg font-bold text-foreground">{reviewTasks}</p>
+          </div>
+          <div className="rounded-xl border border-border-muted bg-surface-muted/40 px-4 py-3">
+            <p className="text-xs font-medium text-muted-foreground">Completed</p>
+            <p className="mt-1 text-lg font-bold text-foreground">{completedTasks}</p>
           </div>
         </div>
       </div>
-      <div className="mt-8">
-        <section className="rounded-xl border border-gray-200 bg-white">
-          <div className="border-b border-gray-200 px-6 py-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Recent Activity
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Recent updates across this project.
-                </p>
-              </div>
+
+      {/* Team & Client Collaboration Row */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ProjectMembers
+          members={members}
+          profiles={memberProfiles}
+          canManage={isFreelancer}
+        />
+
+        {isFreelancer && (
+          <div className="rounded-2xl border border-border bg-surface p-6 shadow-2xs">
+            <div className="mb-4">
+              <h2 className="text-base font-semibold tracking-tight text-foreground">
+                Add Client to Project
+              </h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Grant an existing client direct access to deliverables, reviews, and messaging.
+              </p>
             </div>
+
+            <AddProjectClientForm projectId={project.id} />
           </div>
-
-          {recentActivity.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <div className="mx-auto max-w-sm">
-                <h3 className="text-sm font-semibold text-gray-900">
-                  No activity yet
-                </h3>
-                <p className="mt-1 text-sm leading-6 text-gray-500">
-                  Activity will appear here as tasks, reviews, files, and messages
-                  are added to this project.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100 px-6">
-              {recentActivity.map((activity) => (
-                <ActivityItem
-                  key={activity.id}
-                  type={activity.type}
-                  title={activity.title}
-                  description={activity.description}
-                  time={activity.timestamp}
-                  href={activity.href}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <Link
-            href={`/projects/${project.id}/reviews`}
-            className="rounded-xl border border-gray-200 bg-white p-5 transition hover:border-gray-300 hover:shadow-sm"
-          >
-            <p className="text-sm font-medium text-gray-500">
-              Reviews
-            </p>
-
-            <p className="mt-2 text-2xl font-bold text-gray-900">
-              {reviews.length}
-            </p>
-
-            <p className="mt-1 text-xs text-gray-500">
-              {pendingReviews.length} pending · View reviews →
-            </p>
-          </Link>
-
-          <Link
-            href={`/projects/${project.id}/files`}
-            className="rounded-xl border border-gray-200 bg-white p-5 transition hover:border-gray-300 hover:shadow-sm"
-          >
-            <p className="text-sm font-medium text-gray-500">
-              Files
-            </p>
-
-            <p className="mt-2 text-2xl font-bold text-gray-900">
-              {files.length}
-            </p>
-
-            <p className="mt-1 text-xs text-gray-500">
-              {imageFiles} images · {documentFiles} documents · View files →
-            </p>
-          </Link>
-
-          <Link
-            href={`/projects/${project.id}/messages`}
-            className="rounded-xl border border-gray-200 bg-white p-5 transition hover:border-gray-300 hover:shadow-sm"
-          >
-            <p className="text-sm font-medium text-gray-500">
-              Messages
-            </p>
-
-            <p className="mt-2 text-2xl font-bold text-gray-900">
-              {messages.length}
-            </p>
-
-            <p className="mt-1 text-xs text-gray-500">
-              Project conversation · View messages →
-            </p>
-          </Link>
-        </div>
+        )}
       </div>
+
+      {/* Quick Access Tiles: Tasks, Reviews, Files, Messages */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Link
+          href={`/projects/${project.id}/tasks`}
+          className="group rounded-2xl border border-border bg-surface p-5 shadow-2xs transition-all hover:border-border-strong hover:shadow-xs"
+        >
+          <div className="flex items-center justify-between">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+              <CheckSquare className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <ChevronRight className="h-4 w-4 text-subtle-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5" />
+          </div>
+          <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Tasks Board
+          </p>
+          <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">
+            {tasks.length}
+          </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {completedTasks} completed · View board →
+          </p>
+        </Link>
+
+        <Link
+          href={`/projects/${project.id}/reviews`}
+          className="group rounded-2xl border border-border bg-surface p-5 shadow-2xs transition-all hover:border-border-strong hover:shadow-xs"
+        >
+          <div className="flex items-center justify-between">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <ChevronRight className="h-4 w-4 text-subtle-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5" />
+          </div>
+          <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Deliverable Reviews
+          </p>
+          <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">
+            {reviews.length}
+          </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {pendingReviews.length} pending · Review deliverables →
+          </p>
+        </Link>
+
+        <Link
+          href={`/projects/${project.id}/files`}
+          className="group rounded-2xl border border-border bg-surface p-5 shadow-2xs transition-all hover:border-border-strong hover:shadow-xs"
+        >
+          <div className="flex items-center justify-between">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+              <FileText className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <ChevronRight className="h-4 w-4 text-subtle-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5" />
+          </div>
+          <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Project Files
+          </p>
+          <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">
+            {files.length}
+          </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {imageFiles} images · {documentFiles} docs →
+          </p>
+        </Link>
+
+        <Link
+          href={`/projects/${project.id}/messages`}
+          className="group rounded-2xl border border-border bg-surface p-5 shadow-2xs transition-all hover:border-border-strong hover:shadow-xs"
+        >
+          <div className="flex items-center justify-between">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 text-purple-700">
+              <MessageSquare className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <ChevronRight className="h-4 w-4 text-subtle-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5" />
+          </div>
+          <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Messages
+          </p>
+          <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">
+            {messages.length}
+          </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Project conversation · Open chat →
+          </p>
+        </Link>
+      </div>
+
+      {/* Recent Project Activity Feed */}
+      <section className="rounded-2xl border border-border bg-surface p-6 shadow-2xs">
+        <div className="border-b border-border-muted pb-4">
+          <h2 className="text-base font-semibold tracking-tight text-foreground">
+            Project Activity
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Latest events across tasks, reviews, files, and comments for {project.name}.
+          </p>
+        </div>
+
+        {recentActivity.length === 0 ? (
+          <div className="py-12 text-center">
+            <Clock className="mx-auto h-6 w-6 text-subtle-foreground" aria-hidden="true" />
+            <p className="mt-2 text-xs font-semibold text-foreground">
+              No project activity yet
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Activity will show up as tasks are moved, files are uploaded, or reviews are submitted.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border-muted mt-2">
+            {recentActivity.map((activity) => (
+              <ActivityItem
+                key={activity.id}
+                type={activity.type}
+                title={activity.title}
+                description={activity.description}
+                time={activity.timestamp}
+                href={activity.href}
+              />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
-
   );
 }

@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import AuthCard from "@/components/auth/AuthCard";
 import EditTaskForm from "@/components/tasks/EditTaskForm";
 import { getProjects } from "@/lib/supabase/projects";
 import { getTasks } from "@/lib/supabase/tasks";
 import DeleteTaskButton from "@/components/tasks/DeleteTaskButton";
+import PageHeader from "@/components/ui/PageHeader";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 
 export default async function EditTaskPage({
   params,
@@ -28,34 +28,29 @@ export default async function EditTaskPage({
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <div className="mb-6">
-        <Link
-          href={`/projects/${project.id}/tasks`}
-          className="text-sm text-gray-500 hover:text-gray-900"
-        >
-          ← Back to tasks
-        </Link>
+    <div className="mx-auto max-w-2xl space-y-6 animate-in fade-in duration-200">
+      <PageHeader
+        title="Edit Task"
+        description={`Update task details for ${task.title}.`}
+        breadcrumbs={
+          <Breadcrumbs
+            items={[
+              { label: "Projects", href: "/projects" },
+              { label: project.name, href: `/projects/${project.id}` },
+              { label: "Tasks", href: `/projects/${project.id}/tasks` },
+              { label: "Edit Task" },
+            ]}
+          />
+        }
+      />
 
-        <h1 className="mt-4 text-2xl font-bold text-gray-900">
-          Edit task
-        </h1>
-
-        <p className="mt-2 text-sm text-gray-500">
-          Update the details of this task.
-        </p>
-      </div>
-
-      <AuthCard>
+      <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 shadow-xs">
         <EditTaskForm task={task} />
 
-        <div className="mt-6 border-t border-gray-200 pt-6">
-          <DeleteTaskButton
-            taskId={task.id}
-            projectId={project.id}
-          />
+        <div className="mt-8 border-t border-border-muted pt-6">
+          <DeleteTaskButton taskId={task.id} projectId={project.id} />
         </div>
-      </AuthCard>
+      </div>
     </div>
   );
 }

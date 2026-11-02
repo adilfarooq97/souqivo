@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import Button from "@/components/ui/Button";
 
@@ -40,11 +41,15 @@ export default function LogoutButton() {
         </p>
       )}
       <Button
-        variant="secondary"
+        variant="outline"
+        size="sm"
         onClick={handleLogout}
         disabled={isLoading}
+        isLoading={isLoading}
+        leftIcon={<LogOut className="h-3.5 w-3.5" aria-hidden="true" />}
+        aria-label="Sign out"
       >
-        {isLoading ? "Signing out..." : "Sign out"}
+        <span className="hidden sm:inline">Sign out</span>
       </Button>
     </div>
   );

@@ -1,5 +1,8 @@
 import type { ProjectMember } from "@/types";
 import RemoveProjectMemberButton from "@/components/projects/RemoveProjectMemberButton";
+import Avatar from "@/components/ui/Avatar";
+import Badge from "@/components/ui/Badge";
+import { Users } from "lucide-react";
 
 type ProjectMembersProps = {
   members: ProjectMember[];
@@ -17,60 +20,65 @@ export default function ProjectMembers({
   canManage = false,
 }: ProjectMembersProps) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
-      <div className="flex items-center justify-between">
+    <div className="rounded-2xl border border-border bg-surface p-6 shadow-2xs">
+      <div className="flex items-center justify-between border-b border-border-muted pb-4">
         <div>
-          <h2 className="font-semibold text-gray-900">
+          <h2 className="text-base font-semibold tracking-tight text-foreground">
             Project Members
           </h2>
-
-          <p className="mt-1 text-sm text-gray-500">
-            People with access to this project
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            People with workspace access to this project.
           </p>
         </div>
 
-        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+        <span className="rounded-full bg-surface-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground border border-border">
           {members.length}
         </span>
       </div>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-4 space-y-2.5">
         {members.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center">
-            <p className="text-sm font-medium text-gray-700">
-              No project members yet
+          <div className="rounded-xl border border-dashed border-border bg-surface-muted/30 px-4 py-8 text-center">
+            <Users className="mx-auto h-6 w-6 text-subtle-foreground" aria-hidden="true" />
+            <p className="mt-2 text-xs font-semibold text-foreground">
+              No members assigned
             </p>
-
-            <p className="mt-1 text-xs leading-5 text-gray-500">
-              Add a client to give them access to this project.
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Add a client below to invite them to this project.
             </p>
           </div>
         ) : (
           members.map((member) => {
-            const profile = profiles.find(
-              (item) => item.id === member.user_id
-            );
+            const profile = profiles.find((item) => item.id === member.user_id);
+            const memberName = profile?.full_name ?? "Unknown user";
 
             return (
               <div
                 key={member.id}
-                className="flex items-center justify-between rounded-lg border border-gray-100 p-3"
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:bg-surface-muted/30"
               >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-gray-900">
-                    {profile?.full_name ?? "Unknown user"}
-                  </p>
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar name={memberName} size="sm" role={profile?.role} />
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-foreground">
+                      {memberName}
+                    </p>
+                    <p className="text-[10px] capitalize text-muted-foreground">
+                      {member.role}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="flex shrink-0 items-center gap-3">
-                  <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
+                <div className="flex shrink-0 items-center gap-2">
+                  <Badge
+                    variant={member.role === "freelancer" ? "default" : "info"}
+                    size="sm"
+                  >
                     {member.role}
-                  </span>
+                  </Badge>
 
                   {canManage && (
-                    <RemoveProjectMemberButton
-                      memberId={member.id}
-                    />
+                    <RemoveProjectMemberButton memberId={member.id} />
                   )}
                 </div>
               </div>

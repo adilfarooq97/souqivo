@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAccessibleProjects } from "@/lib/supabase/projects";
 import { getMessages } from "@/lib/supabase/messages";
@@ -6,6 +5,7 @@ import { getCurrentUser } from "@/lib/supabase/auth";
 import MessageThread from "@/components/messages/MessageThread";
 import ProjectNavigation from "@/components/projects/ProjectNavigation";
 import PageHeader from "@/components/ui/PageHeader";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 
 export default async function MessagesPage({
   params,
@@ -31,33 +31,32 @@ export default async function MessagesPage({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        <Link
-          href={`/projects/${project.id}`}
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          ← Back to project
-        </Link>
-        <ProjectNavigation projectId={project.id} />
-        <PageHeader
-          title="Messages"
-          description={`${project.name} · Project conversation`}
-        />
-      </div>
+    <div className="space-y-6 animate-in fade-in duration-200">
+      <Breadcrumbs
+        items={[
+          { label: "Projects", href: "/projects" },
+          { label: project.name, href: `/projects/${project.id}` },
+          { label: "Messages" },
+        ]}
+      />
 
-      <div className="rounded-2xl border border-gray-200 bg-white">
-        <div className="border-b border-gray-200 px-6 py-4">
-          <h2 className="font-semibold text-gray-900">
-            Conversation
-          </h2>
+      <ProjectNavigation projectId={project.id} active="messages" />
 
-          <p className="mt-1 text-sm text-gray-500">
+      <PageHeader
+        title={`${project.name} Conversation`}
+        description="Private messaging channel for project members and clients."
+      />
+
+      <div className="rounded-2xl border border-border bg-surface shadow-xs overflow-hidden">
+        <div className="border-b border-border-muted px-6 py-3.5 bg-surface-muted/30 flex items-center justify-between">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Discussion Thread
+          </span>
+          <span className="text-xs text-subtle-foreground font-medium">
             {messages.length === 0
               ? "No messages yet"
-              : `${messages.length} ${messages.length === 1 ? "message" : "messages"
-              }`}
-          </p>
+              : `${messages.length} ${messages.length === 1 ? "message" : "messages"}`}
+          </span>
         </div>
 
         <MessageThread
@@ -66,8 +65,6 @@ export default async function MessagesPage({
           initialMessages={messages}
           canSend={true}
         />
-
-
       </div>
     </div>
   );

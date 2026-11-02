@@ -1,12 +1,12 @@
+import type { ReactNode } from "react";
+
 type AuthCardProps = {
-  children: React.ReactNode;
+  children: ReactNode;
 };
 
-export default function AuthCard({
-  children,
-}: AuthCardProps) {
+export default function AuthCard({ children }: AuthCardProps) {
   return (
-    <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
+    <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
       {children}
     </div>
   );

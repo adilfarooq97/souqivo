@@ -1,58 +1,53 @@
+import Skeleton, { SkeletonCard, SkeletonStats } from "@/components/ui/Skeleton";
+
 export default function DashboardLoading() {
   return (
-    <div className="space-y-8">
-      <div>
-        <div className="h-7 w-48 animate-pulse rounded-md bg-gray-200" />
-        <div className="mt-2 h-4 w-40 animate-pulse rounded-md bg-gray-100" />
-        <div className="mt-2 h-4 w-72 animate-pulse rounded-md bg-gray-100" />
-        <div className="mt-3 h-6 w-20 animate-pulse rounded-full bg-gray-100" />
+    <div className="space-y-8 animate-in fade-in duration-200">
+      <div className="space-y-2 border-b border-border-muted pb-6">
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-4 w-72" />
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <div
-            key={index}
-            className="rounded-xl border border-gray-200 bg-white p-5"
-          >
-            <div className="h-4 w-24 animate-pulse rounded bg-gray-100" />
-            <div className="mt-3 h-9 w-16 animate-pulse rounded bg-gray-200" />
+      <SkeletonStats />
+
+      {/* Review pipeline skeleton */}
+      <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
+        <Skeleton className="h-5 w-40" />
+        <div className="grid gap-4 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-border bg-surface-muted/30 p-4 space-y-2">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-8 w-14" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Projects and Activity grid */}
+      <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
+        <div className="space-y-4">
+          <Skeleton className="h-5 w-36" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
           </div>
-        ))}
-      </div>
-
-      <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6">
-        <div className="h-5 w-36 animate-pulse rounded bg-gray-200" />
-        <div className="mt-2 h-4 w-64 animate-pulse rounded bg-gray-100" />
-
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-24 animate-pulse rounded-lg bg-gray-100"
-            />
-          ))}
         </div>
-      </div>
 
-      <div className="mt-10">
-        <div className="h-6 w-40 animate-pulse rounded bg-gray-200" />
-        <div className="mt-2 h-4 w-64 animate-pulse rounded bg-gray-100" />
-
-        <div className="mt-5 grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-48 animate-pulse rounded-xl border border-gray-200 bg-white"
-            />
-          ))}
+        <div className="space-y-4">
+          <Skeleton className="h-5 w-32" />
+          <div className="rounded-2xl border border-border bg-surface p-4 space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 py-2">
+                <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+                <div className="space-y-1.5 flex-1">
+                  <Skeleton className="h-3.5 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-
-      <div className="mt-10">
-        <div className="h-6 w-40 animate-pulse rounded bg-gray-200" />
-        <div className="mt-2 h-4 w-72 animate-pulse rounded bg-gray-100" />
-
-        <div className="mt-4 h-40 animate-pulse rounded-xl border border-gray-200 bg-white" />
       </div>
     </div>
   );

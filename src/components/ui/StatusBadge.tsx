@@ -5,7 +5,7 @@ import type {
   TaskPriority,
   TaskStatus,
 } from "@/types";
-import Badge from "@/components/ui/Badge";
+import Badge, { type BadgeVariant } from "@/components/ui/Badge";
 
 type StatusValue =
   | InvoiceStatus
@@ -17,12 +17,11 @@ type StatusValue =
 type StatusBadgeProps = {
   status: StatusValue;
   prefix?: string;
+  size?: "sm" | "md";
+  showDot?: boolean;
 };
 
-const variants: Record<
-  StatusValue,
-  "default" | "success" | "warning" | "danger" | "info"
-> = {
+const variants: Record<StatusValue, BadgeVariant> = {
   Draft: "default",
   Planning: "default",
   Todo: "default",
@@ -43,9 +42,13 @@ const variants: Record<
 export default function StatusBadge({
   status,
   prefix,
+  size = "md",
+  showDot = true,
 }: StatusBadgeProps) {
+  const variant = variants[status] ?? "default";
+
   return (
-    <Badge variant={variants[status]}>
+    <Badge variant={variant} size={size} dot={showDot}>
       {prefix ? `${prefix}: ${status}` : status}
     </Badge>
   );

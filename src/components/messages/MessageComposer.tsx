@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Send } from "lucide-react";
 import Button from "@/components/ui/Button";
+import Alert from "@/components/ui/Alert";
 import type { Message } from "@/types";
 
 type MessageComposerProps = {
@@ -25,9 +27,7 @@ export default function MessageComposer({
   const handleSubmit = async () => {
     const trimmedContent = content.trim();
 
-    if (!trimmedContent || isSending) {
-      return;
-    }
+    if (!trimmedContent || isSending) return;
 
     setIsSending(true);
     setError("");
@@ -47,14 +47,14 @@ export default function MessageComposer({
       const data: unknown = await response.json().catch(() => null);
 
       if (!response.ok) {
-        const error =
+        const err =
           data &&
           typeof data === "object" &&
           "error" in data &&
           typeof data.error === "string"
             ? data.error
             : "Failed to send message";
-        throw new Error(error);
+        throw new Error(err);
       }
 
       if (
@@ -83,11 +83,9 @@ export default function MessageComposer({
       });
       setContent("");
       router.refresh();
-    } catch (error) {
+    } catch (err) {
       setError(
-        error instanceof Error
-          ? error.message
-          : "Something went wrong"
+        err instanceof Error ? err.message : "Something went wrong"
       );
     } finally {
       setIsSending(false);
@@ -105,52 +103,43 @@ export default function MessageComposer({
 
   return (
     <div className="space-y-3">
-      <textarea
-        aria-label="Write a message"
-        value={content}
-        onChange={(event) => {
-          if (event.target.value.length <= MAX_LENGTH) {
-            setContent(event.target.value);
-          }
-        }}
-        onKeyDown={handleKeyDown}
-        placeholder="Write a message..."
-        rows={3}
-        disabled={isSending}
-        className="w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-100 disabled:cursor-not-allowed disabled:bg-gray-50"
-      />
+      <div className="relative">
+        <textarea
+          aria-label="Write a message"
+          value={content}
+          onChange={(event) => {
+            if (event.target.value.length <= MAX_LENGTH) {
+              setContent(event.target.value);
+            }
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder="Type your message... (Press Enter to send, Shift+Enter for new line)"
+          rows={3}
+          disabled={isSending}
+          className="w-full resize-none rounded-xl border border-border bg-surface p-3.5 text-xs leading-relaxed text-foreground shadow-2xs outline-none transition placeholder:text-subtle-foreground hover:border-border-strong focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:bg-surface-muted"
+        />
+      </div>
 
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-xs text-gray-400">
-            Press Enter to send · Shift + Enter for a new line
-          </p>
-
-          <p
-            className={`mt-1 text-xs ${
-              content.length >= MAX_LENGTH
-                ? "text-danger"
-                : "text-subtle-foreground"
-            }`}
-          >
-            {content.length}/{MAX_LENGTH}
-          </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-[11px] text-subtle-foreground">
+          <span>{content.length}/{MAX_LENGTH}</span>
+          <span className="hidden sm:inline">·</span>
+          <span className="hidden sm:inline">Enter to send · Shift+Enter for line break</span>
         </div>
 
         <Button
           type="button"
+          size="sm"
           onClick={() => void handleSubmit()}
           disabled={isSending || !content.trim()}
+          isLoading={isSending}
+          leftIcon={<Send className="h-3.5 w-3.5" />}
         >
-          {isSending ? "Sending..." : "Send message"}
+          Send
         </Button>
       </div>
 
-      {error && (
-        <p className="text-sm text-danger" role="alert">
-          {error}
-        </p>
-      )}
+      {error && <Alert tone="danger">{error}</Alert>}
     </div>
   );
 }

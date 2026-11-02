@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes } from "react";
+import type { InputHTMLAttributes, ReactNode } from "react";
 import Input from "@/components/ui/Input";
 
 type FormFieldProps = Omit<
@@ -11,9 +11,8 @@ type FormFieldProps = Omit<
   value?: string;
   error?: string;
   helperText?: string;
-  onChange?: (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => void;
+  leftIcon?: ReactNode;
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
 export default function FormField({
@@ -25,11 +24,12 @@ export default function FormField({
   error,
   disabled = false,
   helperText,
+  leftIcon,
   onChange,
   ...inputProps
 }: FormFieldProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5 w-full">
       <Input
         {...inputProps}
         id={id}
@@ -38,6 +38,7 @@ export default function FormField({
         placeholder={placeholder}
         value={value}
         disabled={disabled}
+        leftIcon={leftIcon}
         onChange={onChange}
         aria-invalid={Boolean(error)}
         aria-describedby={
@@ -50,14 +51,14 @@ export default function FormField({
         }
       />
 
-      {helperText && (
+      {helperText && !error && (
         <p id={`${id}-help`} className="text-xs leading-5 text-muted-foreground">
           {helperText}
         </p>
       )}
 
       {error && (
-        <p id={`${id}-error`} className="text-sm text-danger" role="alert">
+        <p id={`${id}-error`} className="text-xs font-medium text-danger" role="alert">
           {error}
         </p>
       )}

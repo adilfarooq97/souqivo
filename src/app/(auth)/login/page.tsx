@@ -6,6 +6,7 @@ import Link from "next/link";
 import AuthHeader from "@/components/auth/AuthHeader";
 import AuthCard from "@/components/auth/AuthCard";
 import FormField from "@/components/ui/FormField";
+import Alert from "@/components/ui/Alert";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -86,12 +87,9 @@ export default function LoginPage() {
         </p>
 
         {authError && (
-          <p
-            className="mt-5 rounded-lg bg-danger/10 p-3 text-sm text-danger"
-            role="alert"
-          >
+          <Alert tone="danger" className="mt-5">
             {authError}
-          </p>
+          </Alert>
         )}
 
         <form onSubmit={handleSubmit} className="mt-7 space-y-5">

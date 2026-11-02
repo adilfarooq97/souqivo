@@ -1,10 +1,9 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import AuthCard from "@/components/auth/AuthCard";
+import { notFound, redirect } from "next/navigation";
 import EditProjectForm from "@/components/projects/EditProjectForm";
 import { getProjects } from "@/lib/supabase/projects";
 import { getCurrentUserProfile } from "@/lib/supabase/auth";
-import { redirect } from "next/navigation";
+import PageHeader from "@/components/ui/PageHeader";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 
 export default async function EditProjectPage({
   params,
@@ -14,11 +13,7 @@ export default async function EditProjectPage({
   const { id } = await params;
 
   const projects = await getProjects();
-
-  const project = projects.find(
-    (item) => item.id === id
-  );
-
+  const project = projects.find((item) => item.id === id);
 
   if (!project) {
     notFound();
@@ -35,27 +30,24 @@ export default async function EditProjectPage({
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <div className="mb-6">
-        <Link
-          href={`/projects/${project.id}`}
-          className="text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
-        >
-          ← Back to project
-        </Link>
+    <div className="mx-auto max-w-2xl space-y-6 animate-in fade-in duration-200">
+      <PageHeader
+        title={`Edit ${project.name}`}
+        description="Update your project timeline, status, and description."
+        breadcrumbs={
+          <Breadcrumbs
+            items={[
+              { label: "Projects", href: "/projects" },
+              { label: project.name, href: `/projects/${project.id}` },
+              { label: "Edit" },
+            ]}
+          />
+        }
+      />
 
-        <h1 className="mt-4 text-2xl font-bold tracking-tight text-gray-900">
-          Edit project
-        </h1>
-
-        <p className="mt-2 text-sm leading-6 text-gray-500">
-          Update the details of your project.
-        </p>
-      </div>
-
-      <AuthCard>
+      <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 shadow-xs">
         <EditProjectForm project={project} />
-      </AuthCard>
+      </div>
     </div>
   );
 }

@@ -1,9 +1,10 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProjects } from "@/lib/supabase/projects";
 import { getReviews } from "@/lib/supabase/reviews";
 import EditReviewForm from "@/components/reviews/EditReviewForm";
 import DeleteReviewButton from "@/components/reviews/DeleteReviewButton";
+import PageHeader from "@/components/ui/PageHeader";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 
 export default async function EditReviewPage({
   params,
@@ -30,25 +31,29 @@ export default async function EditReviewPage({
   }
 
   return (
-    <div className="space-y-6">
-      <Link
-        href={`/projects/${project.id}/reviews`}
-        className="text-sm text-gray-500 hover:text-gray-900"
-      >
-        ← Back to reviews
-      </Link>
+    <div className="mx-auto max-w-2xl space-y-6 animate-in fade-in duration-200">
+      <PageHeader
+        title="Edit Deliverable Review"
+        description={`Update review details for ${review.title}.`}
+        breadcrumbs={
+          <Breadcrumbs
+            items={[
+              { label: "Projects", href: "/projects" },
+              { label: project.name, href: `/projects/${project.id}` },
+              { label: "Reviews", href: `/projects/${project.id}/reviews` },
+              { label: "Edit Review" },
+            ]}
+          />
+        }
+      />
 
-      <EditReviewForm
-  review={review}
-  projectId={project.id}
-/>
+      <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 shadow-xs">
+        <EditReviewForm review={review} projectId={project.id} />
 
-<div>
-  <DeleteReviewButton
-    reviewId={review.id}
-    projectId={project.id}
-  />
-</div>
+        <div className="mt-8 border-t border-border-muted pt-6">
+          <DeleteReviewButton reviewId={review.id} projectId={project.id} />
+        </div>
+      </div>
     </div>
   );
 }
